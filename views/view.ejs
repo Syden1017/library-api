@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= book.title %></title>
+</head>
+<body>
+    <h1><%= book.title %></h1>
+    <p><strong>Description:</strong> <%= book.description %></p>
+    <p><strong>Authors:</strong> <%= book.authors %></p>
+    <p><strong>Favorite:</strong> <%= book.favorite ? 'Yes' : 'No' %></p>
+    <p><strong>File Cover:</strong> <img src="<%= book.fileCover %>" alt="Cover" /></p>
+    <a href="/api/books">Back to List</a>
+</body>
+</html>

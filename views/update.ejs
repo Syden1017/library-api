@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Edit Book</title>
+  </head>
+  <body>
+    <h1>Edit Book: <%= book.title %></h1>
+    <form
+      action="/api/books/update/<%= book.id %>"
+      method="POST"
+      enctype="multipart/form-data"
+    >
+      <label for="title">Title:</label>
+      <input type="text" name="title" value="<%= book.title %>" required />
+      <br />
+      <label for="description">Description:</label>
+      <textarea name="description" required>
+<%= book
+            <label for="description">Description:</label>
+            <textarea name="description" required><%= book.description %></textarea
+      >
+      <br />
+      <label for="authors">Authors:</label>
+      <input type="text" name="authors" value="<%= book.authors %>" required />
+      <br />
+      <label for="favorite">Favorite:</label>
+      <input type="checkbox" name="favorite" value="true" <%= book.favorite ?
+      'checked' : '' %> >
+      <br />
+      <label for="fileCover">Current Cover:</label>
+      <img
+        src="<%= book.fileCover %>"
+        alt="Cover"
+        style="width: 100px; height: auto"
+      />
+      <br />
+      <label for="filebook">Upload New Book File (optional):</label>
+      <input type="file" name="filebook" />
+      <br />
+      <button type="submit">Update Book</button>
+    </form>
+    <form
+      action="/api/books/<%= book.id %>/delete"
+      method="POST"
+      style="display: inline"
+    >
+      <button type="submit">Delete Book</button>
+    </form>
+    <br />
+    <a href="/api/books">Back to List</a>
+  </body>
+</html>
