@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Обсуждение книги</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        #comments { max-width: 600px; margin: auto; }
+        .comment { border: 1px solid #ddd; margin: 5px; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Обсуждение книги</h1>
+    <div id="comments"></div>
+    <input id="commentInput" type="text" placeholder="Введите комментарий" />
+    <button id="sendComment">Отправить</button>
+
+    <script>
+        const socket = io();
+
+        document.getElementById('sendComment').onclick = function() {
+            const commentInput = document.getElementById('commentInput');
+            const comment = commentInput.value;
+            if (comment) {
+                socket.emit('newComment', comment);
+                commentInput.value = '';
+            }
+        };
+
+        socket.on('newComment', (comment) => {
+            const commentsDiv = document.getElementById('comments');
+            const newCommentDiv = document.createElement('div');
+            newCommentDiv.classList.add('comment');
+            newCommentDiv.textContent = comment;
+            commentsDiv.appendChild(newCommentDiv);
+        });
+    </script>
+</body>
+</html>

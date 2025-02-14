@@ -8,9 +8,14 @@ const indexRouter = require("./routes/index");
 const booksRouter = require("./routes/books");
 const userApiRouter = require("./routes/api/user");
 const booksApiRouter = require("./routes/api/books");
+const commentsRouter = require("./routes/comments");
 const passportConfig = require("./config/passport");
+const http = require("http");
+const socketIo = require("socket.io");
 
 const app = express();
+const server = http.createServer(app);
+const io = socketIo(server);
 
 app.set("view engine", "ejs");
 
@@ -21,11 +26,23 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 app.use("/", indexRouter);
+app.use("/comments", commentsRouter);
 app.use("/books", booksRouter);
 app.use("/api/user", userApiRouter);
 app.use("/api/books", booksApiRouter);
 
 app.use(errorMiddleware);
+io.on('connection', (socket) => {
+    console.log('A user connected');
+
+    socket.on('newComment', (comment) => {
+        io.emit('newComment', comment);
+    });
+
+    socket.on('disconnect', () => {
+        console.log('User  disconnected');
+    });
+});
 
 const port = process.env.PORT || 3000;
 const dbName = process.env.DB_NAME || "db";
@@ -37,7 +54,7 @@ async function start() {
 
         passportConfig(passport);
 
-        app.listen(port, () => {
+        server.listen(port, () => {
             console.log(`Сервер запущен на порту ${port}`);
         });
     } catch (e) {
