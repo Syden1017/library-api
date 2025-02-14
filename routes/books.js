@@ -1,93 +1,118 @@
-const express = require("express")
-const router = express.Router()
-const { uploadBook } = require("../middleware/upload")
-const path = require("path")
-const Book = require('../models/books')
+const router = require("express").Router();
+const fileMiddleware = require("../middleware/file");
 
-router.get("/", async (req, res) => {
-    const books = await Book.find()
-    res.render("index", { books })
-})
+const Book = require("../models/Book");
 
-router.get('/create', (req, res) => {
-    res.render('create')
-})
+const props = [
+    "title",
+    "description",
+    "authors",
+    "favorite",
+    "fileCover",
+    "fileName",
+];
 
-router.post("/", uploadBook, async (req, res) => {
-    const { title, description, authors, favorite } = req.body
-    const newBook = new Book({
-        id: Date.now().toString(),
-        title,
-        description,
-        authors,
-        favorite: favorite === "true",
-        fileCover: req.file ? `/uploads/${req.file.filename}` : "",
-        fileName: req.file ? req.file.filename : "",
-    })
-    await newBook.save()
-    res.redirect("/api/books")
-})
+router.get("/view", async (_req, res) => {
+    const books = await Book.find();
 
-router.get("/:id", async (req, res) => {
-    const book = await Book.findOne({ id: req.params.id })
+    res.render("books/index", { title: "Книги", books: books });
+});
+
+router.get("/view/:id", async (req, res) => {
+    const { id } = req.params;
+    const book = await Book.findById(id);
+
     if (book) {
-        res.render("view", { book })
+        res.render("books/view", {
+            title: "Просмотр книги",
+            book,
+        });
     } else {
-        res.status(404).json({ message: "Book not found" })
+        res.status(404).redirect("/404");
     }
-})
+});
 
-router.post("/update/:id", uploadBook, async (req, res) => {
-    const { id } = req.params
-    const { title, description, authors, favorite } = req.body
+router.get("/create", (_req, res) => {
+    res.render("books/create", { title: "Добавление книги", book: {} });
+});
 
-    const updatedBook = await Book.findOneAndUpdate(
-        { id },
-        {
-            title,
-            description,
-            authors,
-            favorite: favorite === "true",
-            fileCover: req.file ? `/uploads/${req.file.filename}` : undefined,
-            fileName: req.file ? req.file.filename : undefined,
-        },
-        { new: true }
-    )
+router.post("/create", fileMiddleware.single("fileBook"), async (req, res) => {
+    const newBook = {};
 
-    if (updatedBook) {
-        res.redirect("/api/books")
-    } else {
-        res.status(404).json({ message: "Book not found" })
+    const { body, file } = req;
+
+    props.forEach((p) => {
+        if (body[p] !== undefined) {
+            newBook[p] = body[p];
+        }
+    });
+
+    if (file) {
+        newBook.fileBook = file.path;
     }
-})
 
-router.post("/:id/delete", async (req, res) => {
-    const { id } = req.params
-    await Book.deleteOne({ id })
-    res.redirect("/api/books")
-})
+    try {
+        const book = new Book(newBook);
 
-router.get("/:id/download", async (req, res) => {
-    const book = await Book.findOne({ id: req.params.id })
-    if (book) {
-        const filePath = path.join(__dirname, '..', book.fileName)
-        res.download(filePath, path.basename(book.fileName), (err) => {
-            if (err) {
-                res.status(500).send({ message: "Could not download the file." })
-            }
-        })
-    } else {
-        res.status(404).json({ message: "Book not found" })
+        await book.save();
+
+        res.redirect("/books/view");
+    } catch (e) {
+        console.error(e);
     }
-})
+});
 
 router.get("/update/:id", async (req, res) => {
-    const book = await Book.findOne({ id: req.params.id })
-    if (book) {
-        res.render("update", { book })
-    } else {
-        res.status(404).json({ message: "Book not found" })
-    }
-})
+    const { id } = req.params;
+    let book = await Book.findById(id);
 
-module.exports = router
+    if (book) {
+        res.render("books/update", {
+            title: "Редактирование книги",
+            book,
+        });
+    } else {
+        res.status(404).redirect("/404");
+    }
+});
+
+router.post(
+    "/update/:id",
+    fileMiddleware.single("fileBook"),
+    async (req, res) => {
+        const { id } = req.params;
+        let book = await Book.findById(id);
+
+        if (book) {
+            const { body, file } = req;
+
+            props.forEach((p) => {
+                if (body[p] !== undefined) {
+                    book[p] = body[p];
+                }
+            });
+
+            if (file) {
+                book.fileBook = file.path;
+            }
+
+            res.redirect("/books/view/" + id);
+        } else {
+            res.status(404).redirect("/404");
+        }
+    }
+);
+
+router.post("/delete/:id", async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        await Book.deleteOne({ _id: id });
+        res.status(200).redirect("/books/view");
+    } catch (e) {
+        console.error(e);
+        res.status(404).redirect("/404");
+    }
+});
+
+module.exports = router;
